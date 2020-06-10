@@ -15,7 +15,9 @@ def endStage(number):
 	global watch
 	print "Stage %s done in %f seconds"%(number,time.time()-watch)
 def execWithPushd(line,directory):
-	os.system("pushd %s > /dev/null; %s; popd > /dev/null"%(directory,line))
+    l = "pushd \"%s\" && %s && popd"%(directory,line)
+    os.system(l)
+
 def doStage(number,line,directory):
 	startStage(number)
 	execWithPushd(line,directory)
@@ -27,9 +29,9 @@ def doStageWithFlag(number,line,directory,flag):
 		print "Skipping stage %s"%number
 
 def doMatlabStageWithFlag(number,matline,directory,dump,flag):
-	line = "matlab -nodisplay -r \"try %s;catch E;fprintf('AAABBBCCCAAA');getReport(E),end;exit\" 1>%s 2>%s"%(matline,dump,dump)
+	line = "matlab -nosplash -nodesktop -logfile %s -wait -r \"%s;exit\""%(dump,matline)
 	doStageWithFlag(number,line,directory,flag)
-	if flag:
+	if False:
 		with open(dump,'rb') as f:
 			for ln in f.readlines():
 				if 'AAABBBCCCAAA' in ln:
@@ -37,9 +39,9 @@ def doMatlabStageWithFlag(number,matline,directory,dump,flag):
 					sys.exit(-1)
 
 def doMatlabStageWithFlagDisplay(number,matline,directory,dump,flag):
-	line = "matlab -nodesktop -nosplash -r \"try %s;catch E;fprintf('AAABBBCCCAAA');getReport(E),end;exit\" 1>%s 2>%s"%(matline,dump,dump)
+	line = "matlab -nodesktop -nosplash -wait -logfile %s -r \"%s;exit\""%(dump, matline)
 	doStageWithFlag(number,line,directory,flag)
-	if flag:
+	if False:
 		with open(dump,'rb') as f:
 			for ln in f.readlines():
 				if 'AAABBBCCCAAA' in ln:
@@ -235,7 +237,7 @@ else:
 
 if tad_init.lower() == 'di':
     #Stage 1 - ./DI_from_matrix.pl matrix.chrN @res @win @chrsize > DI.chrN
-    line_mat_to_di = "perl DI_from_matrix.pl %s %s %s %s >& %s"
+    line_mat_to_di = "perl DI_from_matrix.pl %s %s %s %s > %s"
     line_mat_to_di = line_mat_to_di%(fMatrix,res,win,chrsize,fDI)
 
     doStageWithFlag("DixonDI",line_mat_to_di,path_to_dixon_perl,flgDI)
@@ -250,13 +252,13 @@ if tad_init.lower() == 'di':
     doMatlabStageWithFlag("DixonDomainHMMCalling",line_hmm,path_to_dixon,matlab_dump,flgHMM)
 
     #Stage 3 - perl file_ends_cleaner.pl HMM.chrN DI.chrN | perl converter_7col.pl > 7col.chrN
-    stage_line = "perl file_ends_cleaner.pl %s %s | perl converter_7col.pl >& %s"
+    stage_line = "perl file_ends_cleaner.pl %s %s | perl converter_7col.pl > %s"
     stage_line = stage_line%(fHMM,fDI,f7col)
 
     doStageWithFlag("DixonDomains1",stage_line,path_to_dixon_perl,flg7col)
 
     #Stage 4 - perl hmm_probability_correcter.pl 7col.chrN @hmm_min @hmm_prob @res | perl hmm-state_caller.pl @chrsize @chr | perl hmm-state_domains.pl > domains.chrN
-    stage_line = "perl hmm_probablity_correcter.pl %s %s %s %s | perl hmm-state_caller.pl %s %s | perl hmm-state_domains.pl >& %s"
+    stage_line = "perl hmm_probablity_correcter.pl %s %s %s %s | perl hmm-state_caller.pl %s %s | perl hmm-state_domains.pl > %s"
     stage_line = stage_line%(f7col,hmm_min,hmm_prob,res,chrsize,chrname,fDomains)
 
     doStageWithFlag("DixonDomains2",stage_line,path_to_dixon_perl,flgDomains)
@@ -293,7 +295,7 @@ elif not domainpath == "":
 	fDomainsDbg = domainpath
 
 #Fix matrix file
-stage_line2 = "cut -f4- %s >& %s"%(fMatrix,fMatrixDbg)
+stage_line2 = "cut -f4- %s > %s"%(fMatrix,fMatrixDbg)
 doStageWithFlag("FixMatrixFormat","%s"%(stage_line2),".",flgStage5)
 
 #Optional - DebugDixonDomains(fMatrixDbg, fDomainsDbg, res)
@@ -354,7 +356,7 @@ matlab_dump = os.path.abspath(matlab_dump)
 #	      PlotHrrcBed(fMatrix,fHrrcBed,s,e,res,filter,figPath)
 stage_line = "PlotHrrcBed %s %s %d %d %d %d %s"
 stage_line = stage_line%(fMatrixDbg,fBed,1,1000,res,0,fHrrcDebug)
-# doMatlabStageWithFlagDisplay("DebugHierarchies",stage_line,path_to_matlab,matlab_dump,flgHrrcDebug)
+doMatlabStageWithFlagDisplay("DebugHierarchies",stage_line,path_to_matlab,matlab_dump,flgHrrcDebug)
 
 #Stage 12 - Find potential enhancers - overrepresented areas interacting with promotor 
 matlab_dump = output_dir + "/%s.%s.mdump8"%(prefix,chrname)
