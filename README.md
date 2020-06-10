@@ -1,4 +1,4 @@
-# PSYCHIC
+# PSYCHIC : works on windows version
 Code for finding putative enhancers using Hi-C data
 
 ### Usage
@@ -26,7 +26,7 @@ It has scripts in matlab, python and perl, so the minimal requirements would be 
 - Matlab
 - python2.7
 - Perl
-- Unix tools - cut, sed, pushd, popd (typically installed by default)
+- Windows tools - cut, sed, pushd, popd (typically installed by default)
 
 ### Filesystem
 - **`htad-chain.py`**
